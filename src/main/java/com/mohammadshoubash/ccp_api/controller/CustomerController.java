@@ -16,8 +16,10 @@ import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 import com.mohammadshoubash.ccp_api.entity.Customer;
 import com.mohammadshoubash.ccp_api.entity.Order;
+import com.mohammadshoubash.ccp_api.entity.Ticket;
 import com.mohammadshoubash.ccp_api.service.CustomerService;
 import com.mohammadshoubash.ccp_api.service.OrderService;
+import com.mohammadshoubash.ccp_api.service.TicketService;
 
 import jakarta.validation.Valid;
 
@@ -30,6 +32,9 @@ public class CustomerController {
 
     @Autowired 
     private OrderService orderService;
+
+    @Autowired
+    private TicketService ticketService;
     
     @GetMapping
     public List<Customer> getAllCustomers() {
@@ -59,5 +64,10 @@ public class CustomerController {
     @GetMapping("/{customerId}/orders")
     public List<Order> getCustomerOrders(@PathVariable Long customerId) {
         return orderService.getOrdersByCustomerId(customerId);
+    }
+
+    @GetMapping("/{customerId}/tickets")
+    public List<Ticket> getCustomerTickets(@PathVariable Long customerId) {
+        return ticketService.getTicketsByCustomerId(customerId);
     }
 }

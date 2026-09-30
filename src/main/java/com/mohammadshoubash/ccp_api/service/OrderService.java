@@ -30,7 +30,6 @@ public class OrderService {
             throw new IllegalArgumentException("Order and customer cannot be null");
         }
 
-        // Default values if not provided
         order.setStatus(OrderStatus.valueOf(orderRequest.status().toUpperCase()));
         
         Customer customer = customerRepository.findById(orderRequest.customer_id())
@@ -56,7 +55,12 @@ public class OrderService {
     }
 
     public List<Order> getOrdersByCustomerId(Long customerId) {
-        return orderRepository.findByCustomerId(customerId);
+        Optional<Customer> customer = customerRepository.findById(customerId);
+        if (customer.isPresent()) {
+            return orderRepository.findByCustomerId(customer.get().getId());
+        } else {
+            throw new ResourceNotFoundException("Customer not found with id: " + customerId);
+        }
     }
 
     public Order updateOrderStatus(Long id, OrderStatus status) {
