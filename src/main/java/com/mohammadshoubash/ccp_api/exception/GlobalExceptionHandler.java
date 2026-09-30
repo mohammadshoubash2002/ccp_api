@@ -37,4 +37,10 @@ public class GlobalExceptionHandler {
                 .findFirst().orElse("Invalid request");
         return new MessageResponse(msg);
     }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public MessageResponse handleDuplicateResource(DuplicateResourceException e) {
+        return new MessageResponse(e.getMessage());
+    }
 }
