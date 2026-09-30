@@ -5,6 +5,7 @@ import com.mohammadshoubash.ccp_api.repository.CustomerRepository;
 import java.util.List;
 
 import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
+import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 import com.mohammadshoubash.ccp_api.entity.Customer;
 import com.mohammadshoubash.ccp_api.exception.DuplicateResourceException;
 import com.mohammadshoubash.ccp_api.exception.RecourceNotFoundException;
@@ -61,6 +62,10 @@ public class CustomerService {
     }
 
     public void deleteCustomer(Long id) {
-        repository.deleteById(id);
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+        } else {
+            throw new RecourceNotFoundException("Customer not found with id " + id);
+        }
     }
 }

@@ -13,6 +13,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
+import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 import com.mohammadshoubash.ccp_api.entity.Customer;
 import com.mohammadshoubash.ccp_api.service.CustomerService;
 
@@ -45,7 +46,8 @@ public class CustomerController {
     }
     
     @DeleteMapping("/{id}")
-    public void deleteCustomer(@PathVariable Long id) {
+    public MessageResponse deleteCustomer(@PathVariable Long id) {
         customerService.deleteCustomer(id);
+        return new MessageResponse("Customer deleted successfully");
     }
 }
