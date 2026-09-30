@@ -15,9 +15,9 @@ import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(RecourceNotFoundException.class)
+    @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(
-            RecourceNotFoundException ex, 
+            ResourceNotFoundException ex, 
             WebRequest request) {
         
         Map<String, Object> body = new LinkedHashMap<>();

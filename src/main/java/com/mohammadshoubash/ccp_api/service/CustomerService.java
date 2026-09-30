@@ -8,7 +8,7 @@ import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 import com.mohammadshoubash.ccp_api.entity.Customer;
 import com.mohammadshoubash.ccp_api.exception.DuplicateResourceException;
-import com.mohammadshoubash.ccp_api.exception.RecourceNotFoundException;
+import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
 
 @Service 
 public class CustomerService {
@@ -23,7 +23,7 @@ public class CustomerService {
     }
 
     public Customer getCustomerById(Long id) {
-        return repository.findById(id).orElseThrow(() -> new RecourceNotFoundException("Customer not found with id " + id));
+        return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + id));
     }
 
     public Customer createCustomer(CustomerRequest request) {
@@ -44,7 +44,7 @@ public class CustomerService {
     
     public Customer updateCustomer(Long id, CustomerRequest request) {
         Customer existingCustomer = repository.findById(id)
-                .orElseThrow(() -> new RecourceNotFoundException("Customer not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + id));
         
         if (repository.existsByEmailAndIdNot(request.email(), id)) {
             throw new DuplicateResourceException("Email is already registered by another customer");
@@ -65,7 +65,7 @@ public class CustomerService {
         if (repository.existsById(id)) {
             repository.deleteById(id);
         } else {
-            throw new RecourceNotFoundException("Customer not found with id " + id);
+            throw new ResourceNotFoundException("Customer not found with id " + id);
         }
     }
 }

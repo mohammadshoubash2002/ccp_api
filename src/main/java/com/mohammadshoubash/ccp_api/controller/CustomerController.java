@@ -15,7 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 import com.mohammadshoubash.ccp_api.entity.Customer;
+import com.mohammadshoubash.ccp_api.entity.Order;
 import com.mohammadshoubash.ccp_api.service.CustomerService;
+import com.mohammadshoubash.ccp_api.service.OrderService;
 
 import jakarta.validation.Valid;
 
@@ -25,6 +27,9 @@ import jakarta.validation.Valid;
 public class CustomerController {
     @Autowired
     private CustomerService customerService;
+
+    @Autowired 
+    private OrderService orderService;
     
     @GetMapping
     public List<Customer> getAllCustomers() {
@@ -49,5 +54,10 @@ public class CustomerController {
     public MessageResponse deleteCustomer(@PathVariable Long id) {
         customerService.deleteCustomer(id);
         return new MessageResponse("Customer deleted successfully");
+    }
+
+    @GetMapping("/{customerId}/orders")
+    public List<Order> getCustomerOrders(@PathVariable Long customerId) {
+        return orderService.getOrdersByCustomerId(customerId);
     }
 }
