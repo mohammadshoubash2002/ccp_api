@@ -2,6 +2,7 @@ package com.mohammadshoubash.ccp_api.service;
 
 import com.mohammadshoubash.ccp_api.dto.OrderRequest;
 import com.mohammadshoubash.ccp_api.dto.OrderResponse;
+import com.mohammadshoubash.ccp_api.dto.WebhookEventPayload;
 import com.mohammadshoubash.ccp_api.entity.Order;
 import com.mohammadshoubash.ccp_api.entity.OrderStatus;
 import com.mohammadshoubash.ccp_api.entity.Role;
@@ -37,6 +38,9 @@ public class OrderService {
 
     @Autowired
     private AppUserRepository appUserRepository;
+
+    @Autowired
+    private WebhookService webhookService;
 
     public OrderResponse createOrder(OrderRequest orderRequest) {
         Order order = new Order();
@@ -100,7 +104,8 @@ public class OrderService {
     }
 
     public OrderResponse updateOrderStatus(Long id, OrderStatus status, String username) {
-        Optional<Order> orderOpt = orderRepository.findById(id);
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
         AppUser currentUser = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
@@ -109,21 +114,33 @@ public class OrderService {
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         
         // Customer can only view their own order
-        boolean isOwner = orderOpt.get().getCustomer() != null 
-                && orderOpt.get().getCustomer().getUser() != null 
-                && orderOpt.get().getCustomer().getUser().getUsername().equals(username);
+        boolean isOwner = order.getCustomer() != null 
+                && order.getCustomer().getUser() != null 
+                && order.getCustomer().getUser().getUsername().equals(username);
 
         if (!isAdmin && !isOwner) {
             throw new AccessDeniedException("You don't have permission to update this order");
         }
 
-        if (orderOpt.isPresent()) {
-            Order order = orderOpt.get();
+        OrderStatus previousStatus = order.getStatus();
+
+        if (previousStatus != status) {
             order.setStatus(status);
-            return new OrderResponse(orderRepository.save(order));
+            order = orderRepository.save(order);
+
+            // Trigger webhook asynchronously
+            webhookService.publishEvent("order.status_changed", new WebhookEventPayload(
+                    "order.status_changed",
+                    order.getId(),
+                    previousStatus.name(),
+                    status.name(),
+                    java.time.Instant.now().toString()
+            ));
         } else {
-            throw new ResourceNotFoundException("Order not found with id: " + id);
+            throw new IllegalArgumentException("Order status is already " + status.name());
         }
+
+        return new OrderResponse(order);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

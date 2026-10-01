@@ -58,4 +58,10 @@ public class GlobalExceptionHandler {
     public MessageResponse handleAccessDenied(AccessDeniedException ex) {
         return new MessageResponse(ex.getMessage());
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public MessageResponse handleIllegalArgument(IllegalArgumentException ex) {
+        return new MessageResponse(ex.getMessage());
+    }
 }
