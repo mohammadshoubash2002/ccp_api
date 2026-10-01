@@ -5,18 +5,15 @@ import com.mohammadshoubash.ccp_api.dto.UserResponse;
 import com.mohammadshoubash.ccp_api.entity.AppUser;
 import com.mohammadshoubash.ccp_api.entity.Role;
 import com.mohammadshoubash.ccp_api.exception.DuplicateResourceException;
-// import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
 import com.mohammadshoubash.ccp_api.repository.AppUserRepository;
 
-// import org.springframework.context.annotation.Bean;
-// import org.springframework.security.access.prepost.PreAuthorize;
-// import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
 
-// import java.util.List;
+import java.util.List;
 
 @Service
 public class UserService {
@@ -42,19 +39,19 @@ public class UserService {
         return UserResponse.from(repository.save(user));
     }
 
-    // @PreAuthorize("hasRole('ADMIN')")
-    // public List<UserResponse> findAll() {
-    //     return repository.findAll().stream().map(UserResponse::from).toList();
-    // }
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<UserResponse> findAll() {
+        return repository.findAll().stream().map(UserResponse::from).toList();
+    }
 
-    // @PreAuthorize("hasRole('ADMIN')")
-    // @Transactional
-    // public UserResponse changeRole(Long id, Role role) {
-    //     AppUser user = repository.findById(id)
-    //             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public UserResponse changeRole(Long id, Role role) {
+        AppUser user = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
 
-    //     user.setRole(role);
-        
-    //     return UserResponse.from(user);
-    // }
+        user.setRole(role);
+
+        return UserResponse.from(user);
+    }
 }
