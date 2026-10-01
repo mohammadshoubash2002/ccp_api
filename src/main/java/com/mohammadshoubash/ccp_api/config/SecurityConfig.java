@@ -37,7 +37,7 @@ public class SecurityConfig {
                .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/error", "/", "/h2-console/**", "/webhooks/**").permitAll() // guest - future: "/webhooks/incoming/**", "/ws/**", "/ws-test.html"
+                        .requestMatchers("/api/auth/**", "/error", "/", "/h2-console/**", "/webhooks/**", "/ws/**", "/ws-test.html").permitAll() // guest - future: "/webhooks/incoming/**", "/ws/**", "/ws-test.html"
                         .requestMatchers("/api/admin/**", "/api/customers/**").hasRole("ADMIN") // admin
                         .requestMatchers("/api/orders/**", "/api/tickets/**").hasAnyRole("CUSTOMER", "ADMIN") // customer
                         .anyRequest().authenticated()    

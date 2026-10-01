@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -15,16 +16,15 @@ import com.mohammadshoubash.ccp_api.repository.CustomerRepository;
 import com.mohammadshoubash.ccp_api.entity.Ticket;
 import com.mohammadshoubash.ccp_api.entity.TicketPriority;
 import com.mohammadshoubash.ccp_api.entity.Customer;
-import com.mohammadshoubash.ccp_api.entity.Order;
 import com.mohammadshoubash.ccp_api.entity.Role;
 import com.mohammadshoubash.ccp_api.entity.TicketStatus;
 import com.mohammadshoubash.ccp_api.entity.AppUser;
 import com.mohammadshoubash.ccp_api.repository.AppUserRepository;
-import com.mohammadshoubash.ccp_api.dto.OrderResponse;
+import com.mohammadshoubash.ccp_api.dto.TicketEventPayload;
 import com.mohammadshoubash.ccp_api.dto.TicketRequest;
 import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
 
-import java.security.Principal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,6 +38,9 @@ public class TicketService {
 
     @Autowired
     private AppUserRepository appUserRepository;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     public Ticket createTicket(TicketRequest ticketRequest) {
         Ticket ticket = new Ticket();
@@ -54,7 +57,17 @@ public class TicketService {
         ticket.setStatus(TicketStatus.valueOf(ticketRequest.status().toUpperCase()));
         ticket.setPriority(TicketPriority.valueOf(ticketRequest.priority().toUpperCase()));
 
-        return ticketRepository.save(ticket);
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        // Broadcast to WebSocket topic:
+        messagingTemplate.convertAndSend("/topic/tickets", new TicketEventPayload(
+            savedTicket.getId(),
+            savedTicket.getCustomer().getId(),
+            savedTicket.getStatus().name(),
+            Instant.now().toString()
+        ));
+
+        return savedTicket;
     }
 
     public Ticket getTicketById(Long id, String username) {
@@ -114,7 +127,17 @@ public class TicketService {
         if (ticketOpt.isPresent()) {
             Ticket ticket = ticketOpt.get();
             ticket.setStatus(status);
-            return ticketRepository.save(ticket);
+            Ticket updatedTicket = ticketRepository.save(ticket);
+
+            // Broadcast to WebSocket topic:
+            messagingTemplate.convertAndSend("/topic/tickets", new TicketEventPayload(
+                updatedTicket.getId(),
+                updatedTicket.getCustomer().getId(),
+                updatedTicket.getStatus().name(),
+                Instant.now().toString()
+            ));
+            
+            return updatedTicket;
         } else {
             throw new ResourceNotFoundException("Ticket not found with id: " + id);
         }

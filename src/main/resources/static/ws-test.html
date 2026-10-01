@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real-Time Ticket Updates</title>
+    <!-- SockJS and STOMP.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background: #f4f6f8; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .badge-connected { background: #d4edda; color: #155724; }
+        .badge-disconnected { background: #f8d7da; color: #721c24; }
+        #logs { max-height: 400px; overflow-y: auto; margin-top: 15px; border: 1px solid #e1e4e8; border-radius: 6px; padding: 10px; background: #fafbfc; }
+        .log-item { background: white; border-left: 4px solid #007bff; margin-bottom: 8px; padding: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        pre { margin: 0; font-size: 13px; color: #24292e; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🎫 Real-Time Support Tickets</h2>
+    <div>Status: <span id="status" class="badge badge-disconnected">Disconnected</span></div>
+
+    <h3>Live Feed (<span style="color:#007bff;">/topic/tickets</span>):</h3>
+    <div id="logs"><p style="color:#888;">Waiting for updates...</p></div>
+</div>
+
+<script>
+    const statusElem = document.getElementById("status");
+    const logsElem = document.getElementById("logs");
+
+    // Connect via SockJS to /ws
+    const socket = new SockJS("/ws");
+    const stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+        statusElem.innerText = "Connected";
+        statusElem.className = "badge badge-connected";
+        logsElem.innerHTML = "";
+
+        // Subscribe to /topic/tickets
+        stompClient.subscribe("/topic/tickets", function (message) {
+            const payload = JSON.parse(message.body);
+
+            const div = document.createElement("div");
+            div.className = "log-item";
+            div.innerHTML = `<pre>${JSON.stringify(payload, null, 2)}</pre>`;
+            logsElem.prepend(div);
+        });
+    }, function (error) {
+        statusElem.innerText = "Disconnected";
+        statusElem.className = "badge badge-disconnected";
+        console.error("STOMP error", error);
+    });
+</script>
+</body>
+</html>
