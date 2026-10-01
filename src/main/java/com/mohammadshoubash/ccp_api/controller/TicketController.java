@@ -1,6 +1,8 @@
 package com.mohammadshoubash.ccp_api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+
 import java.util.List;
 import jakarta.validation.Valid;
 
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
@@ -56,5 +59,14 @@ public class TicketController {
     public MessageResponse deleteTicket(@PathVariable Long id) {
         ticketService.deleteTicket(id);
         return new MessageResponse("Ticket deleted successfully");
+    }
+
+    @GetMapping("/search")
+    public Page<Ticket> getTicketsByFilters(@RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+        return ticketService.getTicketsByFilters(status, priority, sort, page, pageSize);
     }
 }

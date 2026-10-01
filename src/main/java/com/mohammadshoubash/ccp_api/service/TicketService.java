@@ -1,8 +1,14 @@
 package com.mohammadshoubash.ccp_api.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import com.mohammadshoubash.ccp_api.repository.TicketRepository;
+import com.mohammadshoubash.ccp_api.specification.TicketSpecification;
 import com.mohammadshoubash.ccp_api.repository.CustomerRepository;
 import com.mohammadshoubash.ccp_api.entity.Ticket;
 import com.mohammadshoubash.ccp_api.entity.TicketPriority;
@@ -90,5 +96,27 @@ public class TicketService {
             throw new ResourceNotFoundException("Ticket not found with id: " + id);
         }
         ticketRepository.deleteById(id);
+    }
+
+    public Page<Ticket> getTicketsByFilters(String status, String priority, String sort, Integer page, Integer pageSize) {
+        Specification<Ticket> spec = TicketSpecification.buildSpecification(status, priority);
+
+        Sort sortObj = Sort.unsorted();
+        if (sort != null && !sort.isBlank()) {
+            if (sort.startsWith("desc:")) {
+                sortObj = Sort.by(Sort.Direction.DESC, sort.substring(5));
+            } else if (sort.startsWith("asc:")) {
+                sortObj = Sort.by(Sort.Direction.ASC, sort.substring(4));
+            } else {
+                sortObj = Sort.by(sort);
+            }
+        }
+        
+        int pageNumber = (page != null && page > 0) ? page - 1 : 0;
+        int size = (pageSize != null && pageSize > 0) ? pageSize : 10;
+
+        Pageable pageable = PageRequest.of(pageNumber, size, sortObj);
+
+        return ticketRepository.findAll(spec, pageable);
     }
 }
