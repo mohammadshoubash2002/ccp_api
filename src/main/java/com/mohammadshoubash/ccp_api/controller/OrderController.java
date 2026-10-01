@@ -1,8 +1,11 @@
 package com.mohammadshoubash.ccp_api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
 import java.util.List;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
@@ -50,5 +54,13 @@ public class OrderController {
     public MessageResponse deleteOrder(@PathVariable Long id) {
         orderService.deleteOrder(id);
         return new MessageResponse("Order deleted successfully");
+    }
+
+    @GetMapping("/search")
+    public Page<Order> getOrdersByFilters(@RequestParam(required = false) String status,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+        return orderService.getOrdersByFilters(status, sort, page, pageSize);
     }
 }

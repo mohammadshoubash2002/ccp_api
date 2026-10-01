@@ -7,8 +7,14 @@ import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
 import com.mohammadshoubash.ccp_api.repository.OrderRepository;
 import com.mohammadshoubash.ccp_api.repository.CustomerRepository;
 import com.mohammadshoubash.ccp_api.entity.Customer;
+import com.mohammadshoubash.ccp_api.specification.OrderSpecification;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -80,5 +86,27 @@ public class OrderService {
             throw new ResourceNotFoundException("Order not found with id: " + id);
         }
         orderRepository.deleteById(id);
+    }
+
+    public Page<Order> getOrdersByFilters(String status, String sort, Integer page, Integer pageSize) {
+        Specification<Order> spec = OrderSpecification.buildSpecification(status);
+
+        Sort sortObj = Sort.unsorted();
+        if (sort != null && !sort.isBlank()) {
+            if (sort.startsWith("desc:")) {
+                sortObj = Sort.by(Sort.Direction.DESC, sort.substring(5));
+            } else if (sort.startsWith("asc:")) {
+                sortObj = Sort.by(Sort.Direction.ASC, sort.substring(4));
+            } else {
+                sortObj = Sort.by(sort);
+            }
+        }
+        
+        int pageNumber = (page != null && page > 0) ? page - 1 : 0;
+        int size = (pageSize != null && pageSize > 0) ? pageSize : 10;
+
+        Pageable pageable = PageRequest.of(pageNumber, size, sortObj);
+
+        return orderRepository.findAll(spec, pageable);
     }
 }
