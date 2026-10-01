@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 import com.mohammadshoubash.ccp_api.dto.OrderRequest;
+import com.mohammadshoubash.ccp_api.dto.PageResponse;
 import com.mohammadshoubash.ccp_api.entity.OrderStatus;
 import com.mohammadshoubash.ccp_api.entity.Order;
 import com.mohammadshoubash.ccp_api.service.OrderService;
@@ -57,10 +58,11 @@ public class OrderController {
     }
 
     @GetMapping("/search")
-    public Page<Order> getOrdersByFilters(@RequestParam(required = false) String status,
+    public PageResponse<Order> getOrdersByFilters(@RequestParam(required = false) String status,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false, defaultValue = "1") Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return orderService.getOrdersByFilters(status, sort, page, pageSize);
+        Page<Order> orderPage = orderService.getOrdersByFilters(status, sort, page, pageSize);
+        return PageResponse.from(orderPage);
     }
 }

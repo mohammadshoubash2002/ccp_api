@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
+import com.mohammadshoubash.ccp_api.dto.PageResponse;
 import com.mohammadshoubash.ccp_api.dto.TicketRequest;
 import com.mohammadshoubash.ccp_api.entity.TicketPriority;
 import com.mohammadshoubash.ccp_api.entity.TicketStatus;
@@ -62,11 +63,12 @@ public class TicketController {
     }
 
     @GetMapping("/search")
-    public Page<Ticket> getTicketsByFilters(@RequestParam(required = false) String status,
+    public PageResponse<Ticket> getTicketsByFilters(@RequestParam(required = false) String status,
             @RequestParam(required = false) String priority,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false, defaultValue = "1") Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return ticketService.getTicketsByFilters(status, priority, sort, page, pageSize);
+        Page<Ticket> ticketPage = ticketService.getTicketsByFilters(status, priority, sort, page, pageSize);
+        return PageResponse.from(ticketPage);
     }
 }
