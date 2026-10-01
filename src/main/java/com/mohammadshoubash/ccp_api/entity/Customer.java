@@ -25,6 +25,10 @@ public class Customer {
     @Column(name = "updated_at", nullable = false)
     private String updatedAt;
 
+    @OneToOne
+    @JoinColumn(name = "user_id", unique = true)
+    private AppUser user;
+
     public Customer() {}
 
     public Customer(Long id, String name, String email, String phone) {
@@ -40,10 +44,12 @@ public class Customer {
     public String getPhone() { return phone; }
     public String getCreatedAt() { return createdAt; }
     public String getUpdatedAt() { return updatedAt; }
+    public AppUser getUser() { return user; }
 
     public void setName(String name) { this.name = name; }
     public void setEmail(String email) { this.email = email; }
     public void setPhone(String phone) { this.phone = phone; }
+    public void setUser(AppUser user) { this.user = user; }
     
     @PrePersist
     public void setCreatedAt() {

@@ -5,7 +5,6 @@ import com.mohammadshoubash.ccp_api.repository.CustomerRepository;
 import java.util.List;
 
 import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
-import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 import com.mohammadshoubash.ccp_api.entity.Customer;
 import com.mohammadshoubash.ccp_api.exception.DuplicateResourceException;
 import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
