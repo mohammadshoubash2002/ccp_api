@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.security.access.AccessDeniedException;
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 
 @RestControllerAdvice
@@ -50,5 +51,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public MessageResponse handleBadCredentials(Exception ex) {
         return new MessageResponse("Invalid username or password");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public MessageResponse handleAccessDenied(AccessDeniedException ex) {
+        return new MessageResponse(ex.getMessage());
     }
 }

@@ -3,8 +3,10 @@ package com.mohammadshoubash.ccp_api.service;
 import org.springframework.stereotype.Service;
 import com.mohammadshoubash.ccp_api.repository.CustomerRepository;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
+import com.mohammadshoubash.ccp_api.dto.CustomerResponse;
 import com.mohammadshoubash.ccp_api.entity.Customer;
 import com.mohammadshoubash.ccp_api.exception.DuplicateResourceException;
 import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
@@ -17,12 +19,13 @@ public class CustomerService {
         this.repository = repository;
     }
 
-    public List<Customer> getAllCustomers() {
-        return repository.findAll();
+    public List<CustomerResponse> getAllCustomers() {
+        return repository.findAll().stream().map(CustomerResponse::new).collect(Collectors.toList());
     }
 
-    public Customer getCustomerById(Long id) {
-        return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + id));
+    public CustomerResponse getCustomerById(Long id) {
+        Customer customer =  repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + id));
+        return new CustomerResponse(customer);
     }
 
     public Customer createCustomer(CustomerRequest request) {

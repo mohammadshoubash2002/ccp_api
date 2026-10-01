@@ -2,6 +2,8 @@ package com.mohammadshoubash.ccp_api.entity;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -25,6 +27,7 @@ public class Customer {
     @Column(name = "updated_at", nullable = false)
     private String updatedAt;
 
+    @JsonIgnore
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
     private AppUser user;

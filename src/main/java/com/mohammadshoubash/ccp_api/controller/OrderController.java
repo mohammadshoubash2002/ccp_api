@@ -2,6 +2,7 @@ package com.mohammadshoubash.ccp_api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.security.Principal;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 import com.mohammadshoubash.ccp_api.dto.OrderRequest;
+import com.mohammadshoubash.ccp_api.dto.OrderResponse;
 import com.mohammadshoubash.ccp_api.dto.PageResponse;
 import com.mohammadshoubash.ccp_api.entity.OrderStatus;
 import com.mohammadshoubash.ccp_api.entity.Order;
@@ -31,23 +33,24 @@ public class OrderController {
     private OrderService orderService;
 
     @GetMapping
-    public List<Order> getAllOrders() {
+    public List<OrderResponse> getAllOrders() {
         return orderService.getAllOrders();
     }
 
     @GetMapping("/{id}")
-    public Order getOrderById(@PathVariable Long id) {
-        return orderService.getOrderById(id);
+    public OrderResponse getOrderById(@PathVariable Long id, Principal principal) {
+        String username = principal.getName();
+        return orderService.getOrderById(id, username);
     }
 
     @PostMapping
-    public Order createOrder(@Valid @RequestBody OrderRequest orderRequest) {
+    public OrderResponse createOrder(@Valid @RequestBody OrderRequest orderRequest) {
         return orderService.createOrder(orderRequest);
     }
 
     @PatchMapping("/{id}/status")
-    public Order updateOrderStatus(@PathVariable Long id, @Valid @RequestBody OrderStatus status) {
-        return orderService.updateOrderStatus(id, status);
+    public OrderResponse updateOrderStatus(@PathVariable Long id, @Valid @RequestBody OrderStatus status, Principal principal) {
+        return orderService.updateOrderStatus(id, status, principal.getName());
     }
 
     @DeleteMapping("/{id}")
@@ -57,11 +60,17 @@ public class OrderController {
     }
 
     @GetMapping("/search")
-    public PageResponse<Order> getOrdersByFilters(@RequestParam(required = false) String status,
+    public PageResponse<Order> getOrdersByFilters(
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false, defaultValue = "1") Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
         Page<Order> orderPage = orderService.getOrdersByFilters(status, sort, page, pageSize);
         return PageResponse.from(orderPage);
+    }
+
+    @GetMapping("/my-orders")
+    public List<Order> getMyOrders(Principal principal) {
+        return orderService.getMyOrders(principal.getName());
     }
 }

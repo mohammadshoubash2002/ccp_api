@@ -13,7 +13,9 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
+import com.mohammadshoubash.ccp_api.dto.CustomerResponse;
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
+import com.mohammadshoubash.ccp_api.dto.OrderResponse;
 import com.mohammadshoubash.ccp_api.entity.Customer;
 import com.mohammadshoubash.ccp_api.entity.Order;
 import com.mohammadshoubash.ccp_api.entity.Ticket;
@@ -37,12 +39,12 @@ public class CustomerController {
     private TicketService ticketService;
     
     @GetMapping
-    public List<Customer> getAllCustomers() {
+    public List<CustomerResponse> getAllCustomers() {
         return customerService.getAllCustomers();
     }
     
     @GetMapping("/{id}")
-    public Customer getCustomerById(@PathVariable Long id) {
+    public CustomerResponse getCustomerById(@PathVariable Long id) {
         return customerService.getCustomerById(id);
     }
     
@@ -62,7 +64,7 @@ public class CustomerController {
     }
 
     @GetMapping("/{customerId}/orders")
-    public List<Order> getCustomerOrders(@PathVariable Long customerId) {
+    public List<OrderResponse> getCustomerOrders(@PathVariable Long customerId) {
         return orderService.getOrdersByCustomerId(customerId);
     }
 
