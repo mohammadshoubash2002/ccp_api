@@ -1,0 +1,225 @@
+@baseUrl = http://localhost:8080
+
+### ====================================================================
+### 1. AUTHENTICATION & LOGIN
+### ====================================================================
+
+### Register a new Customer account
+# @name registerUser
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "newcustomer",
+  "password": "password123"
+}
+
+### Login as Admin (saves token automatically in REST Client)
+# @name adminLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Extract Admin Token
+@adminToken = {{adminLogin.response.body.token}}
+
+### Login as Demo Customer (saves token automatically in REST Client)
+# @name customerLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "customer",
+  "password": "customer123"
+}
+
+### Extract Customer Token
+@customerToken = {{customerLogin.response.body.token}}
+
+
+### ====================================================================
+### 2. ADMIN USER MANAGEMENT
+### ====================================================================
+
+### Get all users (Admin only)
+GET {{baseUrl}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+
+### Change user role (Admin only)
+PUT {{baseUrl}}/api/admin/users/2/role
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+"ADMIN"
+
+
+### ====================================================================
+### 3. CUSTOMER MANAGEMENT (Admin only)
+### ====================================================================
+
+### Get all customers
+GET {{baseUrl}}/api/customers
+Authorization: Bearer {{adminToken}}
+
+### Get customer by ID
+GET {{baseUrl}}/api/customers/1
+Authorization: Bearer {{adminToken}}
+
+### Create a new customer profile
+POST {{baseUrl}}/api/customers
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "email": "janedoe@example.com",
+  "phone": "+1234567899"
+}
+
+### Update customer profile
+PUT {{baseUrl}}/api/customers/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Demo Customer Updated",
+  "email": "customer@example.com",
+  "phone": "1234567890"
+}
+
+### Get all orders for a specific customer
+GET {{baseUrl}}/api/customers/1/orders
+Authorization: Bearer {{adminToken}}
+
+### Get all tickets for a specific customer
+GET {{baseUrl}}/api/customers/1/tickets
+Authorization: Bearer {{adminToken}}
+
+### Delete customer by ID
+DELETE {{baseUrl}}/api/customers/2
+Authorization: Bearer {{adminToken}}
+
+
+### ====================================================================
+### 4. ORDER MANAGEMENT
+### ====================================================================
+
+### Get all orders (Admin only)
+GET {{baseUrl}}/api/orders
+Authorization: Bearer {{adminToken}}
+
+### Get logged-in customer's own orders
+GET {{baseUrl}}/api/orders/my-orders
+Authorization: Bearer {{customerToken}}
+
+### Get order by ID (Admin or Order Owner)
+GET {{baseUrl}}/api/orders/1
+Authorization: Bearer {{customerToken}}
+
+### Create a new order
+POST {{baseUrl}}/api/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "status": "PENDING",
+  "total": 199.99
+}
+
+### Update order status (Triggers outbound webhook!)
+PATCH {{baseUrl}}/api/orders/1/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+"SHIPPED"
+
+### Search orders with filters, sort, and pagination
+GET {{baseUrl}}/api/orders/search?status=SHIPPED&sort=desc:total&page=1&pageSize=10
+Authorization: Bearer {{adminToken}}
+
+### Delete order by ID (Admin only)
+DELETE {{baseUrl}}/api/orders/1
+Authorization: Bearer {{adminToken}}
+
+
+### ====================================================================
+### 5. SUPPORT TICKET MANAGEMENT
+### ====================================================================
+
+### Get all tickets (Admin only)
+GET {{baseUrl}}/api/tickets
+Authorization: Bearer {{adminToken}}
+
+### Get logged-in customer's own tickets
+GET {{baseUrl}}/api/tickets/my-tickets
+Authorization: Bearer {{customerToken}}
+
+### Get ticket by ID (Admin or Ticket Owner)
+GET {{baseUrl}}/api/tickets/1
+Authorization: Bearer {{customerToken}}
+
+### Create a new support ticket (Broadcasts to WebSocket /topic/tickets!)
+POST {{baseUrl}}/api/tickets
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "subject": "Delay in delivery",
+  "status": "OPEN",
+  "priority": "HIGH"
+}
+
+### Update ticket status (Broadcasts to WebSocket /topic/tickets!)
+PATCH {{baseUrl}}/api/tickets/1/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+"IN_PROGRESS"
+
+### Update ticket priority
+PATCH {{baseUrl}}/api/tickets/1/priority
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+"URGENT"
+
+### Search tickets with filters, sort, and pagination
+GET {{baseUrl}}/api/tickets/search?status=IN_PROGRESS&priority=URGENT&sort=desc:createdAt&page=1&pageSize=10
+Authorization: Bearer {{adminToken}}
+
+### Delete ticket by ID (Admin only)
+DELETE {{baseUrl}}/api/tickets/1
+Authorization: Bearer {{adminToken}}
+
+
+### ====================================================================
+### 6. OUTBOUND WEBHOOKS
+### ====================================================================
+
+### Register a new webhook subscription
+POST {{baseUrl}}/webhooks/subscriptions
+Content-Type: application/json
+
+{
+  "url": "http://localhost:8080/webhooks/incoming/orders",
+  "event": "order.status_changed"
+}
+
+### Simulated incoming webhook receiver (tests signature verification)
+POST {{baseUrl}}/webhooks/incoming/orders
+Content-Type: application/json
+X-Digitinary-Signature: sha256=1ec220c476ea1f5f2194db714581333ebaa8a8a074dd35d0bcaad2fab5233184
+
+{
+  "event": "order.status_changed",
+  "orderId": 1,
+  "previousStatus": "PENDING",
+  "newStatus": "SHIPPED",
+  "occurredAt": "2026-10-01T14:21:32.013966Z"
+}
