@@ -102,7 +102,7 @@ public class OrderService {
     public OrderResponse updateOrderStatus(Long id, OrderStatus status, String username) {
         Optional<Order> orderOpt = orderRepository.findById(id);
 
-         AppUser currentUser = appUserRepository.findByUsername(username)
+        AppUser currentUser = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         
         // Admin can view any order

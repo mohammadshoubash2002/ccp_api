@@ -3,6 +3,7 @@ package com.mohammadshoubash.ccp_api.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
+import java.security.Principal;
 import java.util.List;
 import jakarta.validation.Valid;
 
@@ -37,8 +38,8 @@ public class TicketController {
     }
 
     @GetMapping("/{id}")
-    public Ticket getTicketById(@PathVariable Long id) {
-        return ticketService.getTicketById(id);
+    public Ticket getTicketById(@PathVariable Long id, Principal principal) {
+        return ticketService.getTicketById(id, principal.getName());
     }
 
     @PostMapping
@@ -47,13 +48,13 @@ public class TicketController {
     }
 
     @PatchMapping("/{id}/status")
-    public Ticket updateTicketStatus(@PathVariable Long id, @Valid @RequestBody TicketStatus status) {
-        return ticketService.updateTicketStatus(id, status);
+    public Ticket updateTicketStatus(@PathVariable Long id, @Valid @RequestBody TicketStatus status, Principal principal) {
+        return ticketService.updateTicketStatus(id, status, principal.getName());
     }
 
     @PatchMapping("/{id}/priority")
-    public Ticket updateTicketPriority(@PathVariable Long id, @Valid @RequestBody TicketPriority priority) {
-        return ticketService.updateTicketPriority(id, priority);
+    public Ticket updateTicketPriority(@PathVariable Long id, @Valid @RequestBody TicketPriority priority, Principal principal) {
+        return ticketService.updateTicketPriority(id, priority, principal.getName());
     }
 
     @DeleteMapping("/{id}")
@@ -70,5 +71,10 @@ public class TicketController {
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
         Page<Ticket> ticketPage = ticketService.getTicketsByFilters(status, priority, sort, page, pageSize);
         return PageResponse.from(ticketPage);
+    }
+
+    @GetMapping("/my-tickets")
+    public List<Ticket> getMyTickets(Principal principal) {
+        return ticketService.getMyTickets(principal.getName());
     }
 }
