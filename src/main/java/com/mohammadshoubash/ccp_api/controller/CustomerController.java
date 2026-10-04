@@ -16,7 +16,7 @@ import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
 import com.mohammadshoubash.ccp_api.dto.CustomerResponse;
 import com.mohammadshoubash.ccp_api.dto.MessageResponse;
 import com.mohammadshoubash.ccp_api.dto.OrderResponse;
-import com.mohammadshoubash.ccp_api.entity.Customer;
+import com.mohammadshoubash.ccp_api.entity.AppUser;
 import com.mohammadshoubash.ccp_api.entity.Order;
 import com.mohammadshoubash.ccp_api.entity.Ticket;
 import com.mohammadshoubash.ccp_api.service.CustomerService;
@@ -49,11 +49,11 @@ public class CustomerController {
     }
     
     @PostMapping
-    public Customer createCustomer(@Valid @RequestBody CustomerRequest request) {
+    public AppUser createCustomer(@Valid @RequestBody CustomerRequest request) {
         return customerService.createCustomer(request);
     }
     @PutMapping("/{id}")
-    public Customer updateCustomer(@PathVariable Long id, @Valid @RequestBody CustomerRequest request) {
+    public AppUser updateCustomer(@PathVariable Long id, @Valid @RequestBody CustomerRequest request) {
         return customerService.updateCustomer(id, request);
     }
     

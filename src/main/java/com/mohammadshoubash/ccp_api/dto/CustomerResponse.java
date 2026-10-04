@@ -1,6 +1,6 @@
 package com.mohammadshoubash.ccp_api.dto;
 
-import com.mohammadshoubash.ccp_api.entity.Customer;
+import com.mohammadshoubash.ccp_api.entity.AppUser;
 
 public record CustomerResponse(
     Long id,
@@ -11,7 +11,7 @@ public record CustomerResponse(
     String updatedAt
 ) {
 
-    public CustomerResponse(Customer customer) {
-        this(customer.getId(), customer.getName(), customer.getEmail(), customer.getPhone(), customer.getCreatedAt(), customer.getUpdatedAt());
+    public CustomerResponse(AppUser user) {
+        this(user.getId(), user.getName(), user.getEmail(), user.getPhone(), user.getCreatedAt(), user.getUpdatedAt());
     }
 }

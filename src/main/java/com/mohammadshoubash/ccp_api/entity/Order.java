@@ -13,7 +13,8 @@ public class Order {
     private Long id;
 
     @ManyToOne
-    private Customer customer;
+    @JoinColumn(name = "customer_id")
+    private AppUser user;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
@@ -25,21 +26,23 @@ public class Order {
     public Order() {
     }
 
-    public Order(Long id, Customer customer, OrderStatus status, BigDecimal total, String createdAt) {
+    public Order(Long id, AppUser user, OrderStatus status, BigDecimal total, String createdAt) {
         this.id = id;
-        this.customer = customer;
+        this.user = user;
         this.status = status;
         this.total = total;
         this.createdAt = createdAt;
     }
 
     public Long getId() { return this.id; }
-    public Customer getCustomer() { return this.customer; }
+    public AppUser getUser() { return this.user; }
+    public void setUser(AppUser user) { this.user = user; }
+    public AppUser getCustomer() { return this.user; }
+    public void setCustomer(AppUser user) { this.user = user; }
     public OrderStatus getStatus() { return this.status; }
     public BigDecimal getTotal() { return this.total; }
     public String getCreatedAt() { return this.createdAt; }
     
-    public void setCustomer(Customer customer) { this.customer = customer; }
     public void setStatus(OrderStatus status) { this.status = status; }
     public void setTotal(BigDecimal total) { this.total = total; }
 

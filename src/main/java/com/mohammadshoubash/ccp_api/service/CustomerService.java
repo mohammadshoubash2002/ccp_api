@@ -1,34 +1,38 @@
 package com.mohammadshoubash.ccp_api.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.mohammadshoubash.ccp_api.repository.CustomerRepository;
+import com.mohammadshoubash.ccp_api.repository.AppUserRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.mohammadshoubash.ccp_api.dto.CustomerRequest;
 import com.mohammadshoubash.ccp_api.dto.CustomerResponse;
-import com.mohammadshoubash.ccp_api.entity.Customer;
+import com.mohammadshoubash.ccp_api.entity.AppUser;
+import com.mohammadshoubash.ccp_api.entity.Role;
 import com.mohammadshoubash.ccp_api.exception.DuplicateResourceException;
 import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
 
 @Service 
 public class CustomerService {
-    private final CustomerRepository repository;
+    private final AppUserRepository repository;
+    private final PasswordEncoder encoder;
 
-    public CustomerService(CustomerRepository repository) {
+    public CustomerService(AppUserRepository repository, PasswordEncoder encoder) {
         this.repository = repository;
+        this.encoder = encoder;
     }
 
     public List<CustomerResponse> getAllCustomers() {
-        return repository.findAll().stream().map(CustomerResponse::new).collect(Collectors.toList());
+        return repository.findByRole(Role.CUSTOMER).stream().map(CustomerResponse::new).collect(Collectors.toList());
     }
 
     public CustomerResponse getCustomerById(Long id) {
-        Customer customer =  repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + id));
-        return new CustomerResponse(customer);
+        AppUser user = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + id));
+        return new CustomerResponse(user);
     }
 
-    public Customer createCustomer(CustomerRequest request) {
+    public AppUser createCustomer(CustomerRequest request) {
         if (repository.existsByEmail(request.email())) {
             throw new DuplicateResourceException("Email is already registered");
         }
@@ -37,15 +41,24 @@ public class CustomerService {
             throw new DuplicateResourceException("Phone number is already registered");
         }
 
-        Customer customer = new Customer();
-        customer.setName(request.name());
-        customer.setEmail(request.email());
-        customer.setPhone(request.phone());
-        return repository.save(customer);
+        if (repository.existsByUsername(request.email())) {
+            throw new DuplicateResourceException("Username (email) is already registered");
+        }
+        
+        AppUser user = new AppUser();
+
+        user.setName(request.name());
+        user.setEmail(request.email());
+        user.setPhone(request.phone());
+        user.setRole(Role.CUSTOMER);
+        user.setUsername(request.email());
+        user.setPassword(encoder.encode(request.phone()));
+        
+        return repository.save(user);
     }
     
-    public Customer updateCustomer(Long id, CustomerRequest request) {
-        Customer existingCustomer = repository.findById(id)
+    public AppUser updateCustomer(Long id, CustomerRequest request) {
+        AppUser existingCustomer = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + id));
         
         if (repository.existsByEmailAndIdNot(request.email(), id)) {

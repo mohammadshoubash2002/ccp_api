@@ -13,7 +13,7 @@ public record OrderResponse(
     public OrderResponse (Order order) {
         this(
             order.getId(),
-            order.getCustomer().getId(),
+            order.getUser() != null ? order.getUser().getId() : null,
             order.getTotal(),
             order.getStatus()
         );

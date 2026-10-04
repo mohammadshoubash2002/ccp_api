@@ -12,7 +12,7 @@ public class Ticket {
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
-    private Customer customer;
+    private AppUser user;
 
     private String subject;
 
@@ -26,9 +26,9 @@ public class Ticket {
 
     public Ticket() {}
 
-    public Ticket(Long id, Customer customer, String subject, TicketStatus status, TicketPriority priority, String createdAt) {
+    public Ticket(Long id, AppUser user, String subject, TicketStatus status, TicketPriority priority, String createdAt) {
         this.id = id;
-        this.customer = customer;
+        this.user = user;
         this.subject = subject;
         this.status = status;
         this.priority = priority;
@@ -36,14 +36,16 @@ public class Ticket {
     }
 
     public Long getId() { return id; }
-    public Customer getCustomer() { return customer; }
+    public AppUser getUser() { return user; }
+    public AppUser getCustomer() { return user; }
     public String getSubject() { return subject; }
     public TicketStatus getStatus() { return status; }
     public TicketPriority getPriority() { return priority; }
     public String getCreatedAt() { return createdAt; }
     
     public void setSubject(String subject) { this.subject = subject; }
-    public void setCustomer(Customer customer) { this.customer = customer; }
+    public void setUser(AppUser user) { this.user = user; }
+    public void setCustomer(AppUser user) { this.user = user; }
     public void setStatus(TicketStatus status) { this.status = status; }
     public void setPriority(TicketPriority priority) { this.priority = priority; }
 

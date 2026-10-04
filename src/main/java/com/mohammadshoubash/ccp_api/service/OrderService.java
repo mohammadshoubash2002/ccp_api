@@ -9,9 +9,7 @@ import com.mohammadshoubash.ccp_api.entity.Role;
 import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
 import com.mohammadshoubash.ccp_api.repository.OrderRepository;
 import com.mohammadshoubash.ccp_api.repository.AppUserRepository;
-import com.mohammadshoubash.ccp_api.repository.CustomerRepository;
 import com.mohammadshoubash.ccp_api.entity.AppUser;
-import com.mohammadshoubash.ccp_api.entity.Customer;
 import com.mohammadshoubash.ccp_api.specification.OrderSpecification;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +23,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class OrderService {
@@ -34,37 +31,28 @@ public class OrderService {
     private OrderRepository orderRepository;
 
     @Autowired
-    private CustomerRepository customerRepository;
-
-    @Autowired
     private AppUserRepository appUserRepository;
 
     @Autowired
     private WebhookService webhookService;
 
     public OrderResponse createOrder(OrderRequest orderRequest) {
-        Order order = new Order();
-
         if (orderRequest == null) {
-            throw new IllegalArgumentException("Order and customer cannot be null");
+            throw new IllegalArgumentException("Order request cannot be null");
         }
 
+        Order order = new Order();
         order.setStatus(OrderStatus.valueOf(orderRequest.status().toUpperCase()));
         
-        Customer customer = customerRepository.findById(orderRequest.customer_id())
+        AppUser user = appUserRepository.findById(orderRequest.customer_id())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + orderRequest.customer_id()));
 
-        order.setCustomer(customer);
+        order.setUser(user);
         order.setTotal(orderRequest.total());
 
         order = orderRepository.save(order);
 
-        return new OrderResponse(
-            order.getId(),
-            order.getCustomer().getId(),
-            order.getTotal(),
-            order.getStatus()
-        );
+        return new OrderResponse(order);
     }
 
     public OrderResponse getOrderById(Long id, String username) {
@@ -77,9 +65,8 @@ public class OrderService {
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         
         // Customer can only view their own order
-        boolean isOwner = order.getCustomer() != null 
-                && order.getCustomer().getUser() != null 
-                && order.getCustomer().getUser().getUsername().equals(username);
+        boolean isOwner = order.getUser() != null 
+                && order.getUser().getUsername().equals(username);
 
         if (!isAdmin && !isOwner) {
             throw new AccessDeniedException("You don't have permission to view this order");
@@ -93,14 +80,11 @@ public class OrderService {
         return orderRepository.findAll().stream().map(OrderResponse::new).toList();
     }
 
-    @PreAuthorize("hasRole('ADMIN') or #customer_id == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') or #customerId == authentication.principal.id")
     public List<OrderResponse> getOrdersByCustomerId(Long customerId) {
-        Optional<Customer> customer = customerRepository.findById(customerId);
-        if (customer.isPresent()) {
-            return orderRepository.findByCustomerId(customer.get().getId()).stream().map(OrderResponse::new).toList();
-        } else {
-            throw new ResourceNotFoundException("Customer not found with id: " + customerId);
-        }
+        AppUser customer = appUserRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + customerId));
+        return orderRepository.findByUserId(customer.getId()).stream().map(OrderResponse::new).toList();
     }
 
     public OrderResponse updateOrderStatus(Long id, OrderStatus status, String username) {
@@ -114,9 +98,8 @@ public class OrderService {
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         
         // Customer can only view their own order
-        boolean isOwner = order.getCustomer() != null 
-                && order.getCustomer().getUser() != null 
-                && order.getCustomer().getUser().getUsername().equals(username);
+        boolean isOwner = order.getUser() != null 
+                && order.getUser().getUsername().equals(username);
 
         if (!isAdmin && !isOwner) {
             throw new AccessDeniedException("You don't have permission to update this order");
@@ -177,9 +160,6 @@ public class OrderService {
     public List<Order> getMyOrders(String username) {
         AppUser user = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        if (user.getCustomer() == null) {
-            throw new ResourceNotFoundException("No customer profile found for this user");
-        }
-        return orderRepository.findByCustomerId(user.getCustomer().getId());
+        return orderRepository.findByUserId(user.getId());
     }
 }

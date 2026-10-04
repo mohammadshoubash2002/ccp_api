@@ -12,10 +12,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import com.mohammadshoubash.ccp_api.repository.TicketRepository;
 import com.mohammadshoubash.ccp_api.specification.TicketSpecification;
-import com.mohammadshoubash.ccp_api.repository.CustomerRepository;
 import com.mohammadshoubash.ccp_api.entity.Ticket;
 import com.mohammadshoubash.ccp_api.entity.TicketPriority;
-import com.mohammadshoubash.ccp_api.entity.Customer;
 import com.mohammadshoubash.ccp_api.entity.Role;
 import com.mohammadshoubash.ccp_api.entity.TicketStatus;
 import com.mohammadshoubash.ccp_api.entity.AppUser;
@@ -26,15 +24,11 @@ import com.mohammadshoubash.ccp_api.exception.ResourceNotFoundException;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class TicketService {
     @Autowired 
     private TicketRepository ticketRepository;
-
-    @Autowired
-    private CustomerRepository customerRepository;
 
     @Autowired
     private AppUserRepository appUserRepository;
@@ -43,16 +37,16 @@ public class TicketService {
     private SimpMessagingTemplate messagingTemplate;
 
     public Ticket createTicket(TicketRequest ticketRequest) {
-        Ticket ticket = new Ticket();
-        
         if (ticketRequest == null) {
-            throw new IllegalArgumentException("Ticket and customer cannot be null");
+            throw new IllegalArgumentException("Ticket request cannot be null");
         }
         
-        Customer customer = customerRepository.findById(ticketRequest.customer_id())
+        Ticket ticket = new Ticket();
+        
+        AppUser user = appUserRepository.findById(ticketRequest.customer_id())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + ticketRequest.customer_id()));
 
-        ticket.setCustomer(customer);
+        ticket.setUser(user);
         ticket.setSubject(ticketRequest.subject());
         ticket.setStatus(TicketStatus.valueOf(ticketRequest.status().toUpperCase()));
         ticket.setPriority(TicketPriority.valueOf(ticketRequest.priority().toUpperCase()));
@@ -62,7 +56,7 @@ public class TicketService {
         // Broadcast to WebSocket topic:
         messagingTemplate.convertAndSend("/topic/tickets", new TicketEventPayload(
             savedTicket.getId(),
-            savedTicket.getCustomer().getId(),
+            savedTicket.getUser() != null ? savedTicket.getUser().getId() : null,
             savedTicket.getStatus().name(),
             Instant.now().toString()
         ));
@@ -72,17 +66,16 @@ public class TicketService {
 
     public Ticket getTicketById(Long id, String username) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id: " + id));
         AppUser currentUser = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         
-        // Admin can view any order
+        // Admin can view any ticket
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         
-        // Customer can only view their own order
-        boolean isOwner = ticket.getCustomer() != null 
-                && ticket.getCustomer().getUser() != null 
-                && ticket.getCustomer().getUser().getUsername().equals(username);
+        // Customer can only view their own ticket
+        boolean isOwner = ticket.getUser() != null 
+                && ticket.getUser().getUsername().equals(username);
 
         if (!isAdmin && !isOwner) {
             throw new AccessDeniedException("You don't have permission to view this ticket");
@@ -98,76 +91,63 @@ public class TicketService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public List<Ticket> getTicketsByCustomerId(Long customerId) {
-        Optional<Customer> customer = customerRepository.findById(customerId);
-        if (customer.isPresent()) {
-            return ticketRepository.findByCustomerId(customer.get().getId());
-        } else {
-            throw new ResourceNotFoundException("Customer not found with id: " + customerId);
-        }
+        AppUser customer = appUserRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + customerId));
+        return ticketRepository.findByUserId(customer.getId());
     }
 
     public Ticket updateTicketStatus(Long id, TicketStatus status, String username) {
-        Optional<Ticket> ticketOpt = ticketRepository.findById(id);
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id: " + id));
 
         AppUser currentUser = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         
-        // Admin can view any ticket
+        // Admin can view/update any ticket
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         
-        // Customer can only view their own ticket
-        boolean isOwner = ticketOpt.get().getCustomer() != null 
-                && ticketOpt.get().getCustomer().getUser() != null 
-                && ticketOpt.get().getCustomer().getUser().getUsername().equals(username);
+        // Customer can only update their own ticket
+        boolean isOwner = ticket.getUser() != null 
+                && ticket.getUser().getUsername().equals(username);
 
         if (!isAdmin && !isOwner) {
             throw new AccessDeniedException("You don't have permission to update this ticket");
         }
 
-        if (ticketOpt.isPresent()) {
-            Ticket ticket = ticketOpt.get();
-            ticket.setStatus(status);
-            Ticket updatedTicket = ticketRepository.save(ticket);
+        ticket.setStatus(status);
+        Ticket updatedTicket = ticketRepository.save(ticket);
 
-            // Broadcast to WebSocket topic:
-            messagingTemplate.convertAndSend("/topic/tickets", new TicketEventPayload(
-                updatedTicket.getId(),
-                updatedTicket.getCustomer().getId(),
-                updatedTicket.getStatus().name(),
-                Instant.now().toString()
-            ));
-            
-            return updatedTicket;
-        } else {
-            throw new ResourceNotFoundException("Ticket not found with id: " + id);
-        }
+        // Broadcast to WebSocket topic:
+        messagingTemplate.convertAndSend("/topic/tickets", new TicketEventPayload(
+            updatedTicket.getId(),
+            updatedTicket.getUser() != null ? updatedTicket.getUser().getId() : null,
+            updatedTicket.getStatus().name(),
+            Instant.now().toString()
+        ));
+        
+        return updatedTicket;
     }
 
     public Ticket updateTicketPriority(Long id, TicketPriority priority, String username) {
-        Optional<Ticket> ticketOpt = ticketRepository.findById(id);
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id: " + id));
 
         AppUser currentUser = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         
-        // Admin can view any ticket
+        // Admin can update any ticket
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         
-        // Customer can only view their own ticket
-        boolean isOwner = ticketOpt.get().getCustomer() != null 
-                && ticketOpt.get().getCustomer().getUser() != null 
-                && ticketOpt.get().getCustomer().getUser().getUsername().equals(username);
+        // Customer can only update their own ticket
+        boolean isOwner = ticket.getUser() != null 
+                && ticket.getUser().getUsername().equals(username);
 
         if (!isAdmin && !isOwner) {
             throw new AccessDeniedException("You don't have permission to update this ticket");
         }
 
-        if (ticketOpt.isPresent()) {
-            Ticket ticket = ticketOpt.get();
-            ticket.setPriority(priority);
-            return ticketRepository.save(ticket);
-        } else {
-            throw new ResourceNotFoundException("Ticket not found with id: " + id);
-        }
+        ticket.setPriority(priority);
+        return ticketRepository.save(ticket);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -204,9 +184,6 @@ public class TicketService {
     public List<Ticket> getMyTickets(String username) {
         AppUser user = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        if (user.getCustomer() == null) {
-            throw new ResourceNotFoundException("No customer profile found for this user");
-        }
-        return ticketRepository.findByCustomerId(user.getCustomer().getId());
+        return ticketRepository.findByUserId(user.getId());
     }
 }
